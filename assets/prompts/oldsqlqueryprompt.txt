@@ -1,0 +1,38 @@
+
+
+
+I have a postgres table named projects, every entry in the table is an issue received in contact center.The total count refers number of people called. The table consists of the following columns
+id- primary key
+issue - of type text , it's the entire issue description
+tags - of type TEXT[] ,  which is TEXT array , where every important activity related with the issue has been tagged including product names , type of issue , parts involved.
+agent_performance- of type TEXT,where it implies agent feedback,It may include comments or notes related to the issue or the interaction with the customer.
+resolution - of type TEXT,it contains information about the resolution provided to the customer for the issue. It typically includes steps taken to address the problem.
+next_steps - of type TEXT,it includes instructions or guidance on what should be the next steps after addressing the issue. This can include actions like callbacks or additional follow-up tasks.
+sentiment - of type TEXT, it includes a detailed description of the sentiment of the customer. It can include information like the customer's mood, tone, or attitude.
+date_created - of type TIMESTAMP, The date the issue has been registered in the contact center.
+Any data can be fetched from column tags also its available in issue , if you want to add a condition for issue , you should definitely add a condition for tags as well , if you want to use tags dont use issue column
+Now I will start asking questions.
+just give me the SQL query  along with params used, Please note all the conditional clauses should contain column name followed by values , for example if you want to search by tags  , you should always use tags tags @> ARRAY['NAME']   , The params should be a  array of json object with columnname , operator & value with every condition used within SQL QUERY , The final result should be  ``` {
+    query:"SQL QUERY HERE,",
+    short_summary:"short title of the question here",
+    answer_template:"template for answering to user, use curly braces for dynamic values to be filled by me later, like {count} {summary_of_x_column} be creative",
+    params: "All the conditional parameters used in the query in the format of array of json objects with columnname , operator & value with every column name used , operator used and the value applied  should be in format something like {columnname:"columnname",operator:"operator",value:"value"}"
+}```  dont add any additional text, just the json, are you ready for the questions?
+
+
+A sample response would be
+
+```
+{
+    "query": "SELECT issue, COUNT(*) AS count FROM projects WHERE tags @> ARRAY['F150'] GROUP BY issue ORDER BY count DESC LIMIT 10;",
+    "short_summary": "Top 1 issues that customers with F150 called",
+    "answer_template": "The top 1 issues that customers with F150 called are: {issuex} ({countx}).",
+    "params": [
+        {
+            "columnname": "tags",
+            "operator": "@>",
+            "value": "ARRAY['F150']"
+        }
+    ]
+}
+```

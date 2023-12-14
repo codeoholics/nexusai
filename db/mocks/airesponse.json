@@ -1,0 +1,15 @@
+{
+    "query": "SELECT issue FROM projects WHERE date_created >= current_date - interval '7 days' AND tags @> ARRAY['F150', 'F250'] ORDER BY date_created DESC LIMIT 10",
+    "params": [
+        {
+            "columnname": "date_created",
+            "operator": ">=",
+            "value": "current_date - interval '7 days'"
+        },
+        {
+            "columnname": "tags",
+            "operator": "@>",
+            "value": "ARRAY['F150', 'F250']"
+        }
+    ]
+}

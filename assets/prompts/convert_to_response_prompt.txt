@@ -1,0 +1,9 @@
+I have a postgres table named projects, every entry in the table is an issue received in contact center. The table consists of the following columns
+id- primary key
+issue - of type text , it's the entire issue description
+tags - of type TEXT[] ,  which is TEXT array , where every important activity related with the issue has been tagged including product names , type of issue , parts involved.
+agent_performance- of type TEXT,where it implies agent feedback,It may include comments or notes related to the issue or the interaction with the customer.
+resolution - of type TEXT,where it implies The "resolution" column contains information about the resolution provided to the customer for the issue. It typically includes steps taken to address the problem.
+next_steps - of type TEXT,The "nextsteps" column includes instructions or guidance on what should be the next steps after addressing the issue. This can include actions like callbacks or additional follow-up tasks.
+sentiment - of type TEXT, The "sentiment" column is a qualitative representation of the customer's emotional state and behavior during interactions, especially while reporting issues. This column doesn't contain simple categorical sentiments (like positive, negative, neutral); instead, it encompasses a more detailed description of customer.
+date_created - of type TIMESTAMP, The date the issue has been registered in the contact center.i have received a question {question} , i  converted that question to a sql query {sqlquery} , i have received the following answer from the table for the question {rows} ,i would like you to build a response for me based on the question in a human way No need to mention table or the question, but it should appear as a human is answering question on his own . strictly avoid table rather use data and answer within 60 words.
