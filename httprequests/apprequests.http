@@ -1,0 +1,35 @@
+
+### Upload File
+POST {{baseurl}}/api/projects/uploaddocument
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+Authorization: Bearer {{student_token}}
+
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="summary.docx"
+Content-Type: text/plain
+
+< ./summaries/summary1.docx
+--WebAppBoundary--
+
+
+
+### Add Project
+POST {{baseurl}}/api/projects
+Content-Type: application/json
+Authorization: Bearer {{student_token}}
+
+{
+    "project_type": "student",
+    "title": "Innovative Approaches in Renewable Energy",
+    "description": "This project explores novel techniques in harnessing renewable energy sources. It aims to address the efficiency and scalability issues in solar and wind energy conversion.",
+    "summary_file": "https://nexusbucketpanimalar.s3.amazonaws.com/148-summary.docx",
+    "members": [
+        "alice.smith@example.com"
+    ],
+    "institute": "Green Tech University",
+    "prototype_demo": "https://s3.amazonaws.com/yourbucket/demos/demo1.mp4",
+    "prototype_sourcecode": "https://github.com/exampleuser/renewable-energy-project",
+    "categories": ["Renewable Energy", "Sustainability", "Technology"],
+    "theme": "Engineering",
+    "domain": "Renewable Energy"
+}

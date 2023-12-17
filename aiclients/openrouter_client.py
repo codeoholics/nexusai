@@ -6,14 +6,14 @@ from shared import config
 url = config.get('OPENAI_URL')
 # Request headers
 token = config.get('OPENAI_TOKEN')
-def init_openai():
-    global url, token
-    url = config.get('OPENAI_URL')
-    token = config.get('OPENAI_TOKEN')
+def init_ai():
+    print("init_ai")
 
 
 
-def query_openai_api(query):
+
+
+def query_ai_api(query):
     # Endpoint URL
     headers = {
         'authority': 'api.openai.com',
@@ -45,7 +45,7 @@ def query_openai_api(query):
     return response.json()
 
 # Call the function
-def fetch_first_from_openai(prompt):
+def fetch_first_from_ai(prompt):
     # Endpoint URL
     headers = {
         'authority': 'api.openai.com',
@@ -76,7 +76,7 @@ def fetch_first_from_openai(prompt):
     message_content = response_data['choices'][0]['message']['content']
     return message_content
 
-def fetch_first_from_openai_with_context(context,prompt):
+def fetch_first_from_ai_with_context(context, prompt):
     # Endpoint URL
     headers = {
         'authority': 'api.openai.com',

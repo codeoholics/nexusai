@@ -1,11 +1,23 @@
 import os
 
-from flask import Flask, render_template,send_from_directory, request,jsonify,abort
+from flask import Flask, render_template, send_from_directory, request, jsonify, abort
+from werkzeug.utils import secure_filename
+import tempfile
+import uuid
+
 from flask_cors import CORS
 import jwt
+import datetime
+import json
+
+from awss3.contentmanager import uploadFile
+from projects.document_reader import extract_text_from_file, identify_insights_from_filename
+from projects.project_repository import insert_project_into_db
 from shared import config
+from awss3 import awsconfig
+from shared import logger
 
-
+log = logger.get_logger(__name__)
 
 app = Flask(__name__, static_folder='static')
 
@@ -21,12 +33,11 @@ def serve(path):
     else:
         return send_from_directory(app.static_folder, 'index.html')
 
+
 @app.before_request
 def check_token():
-
     if request.method == 'OPTIONS':
         return None  # Allows default Flask handling for OPTIONS
-
 
     JWT_SECRET = config.get('JWT_SECRET')
 
@@ -56,7 +67,6 @@ def check_token():
         abort(401, description='Missing token')
 
 
-
 @app.route('/api/answer', methods=['GET'])
 def answerchat():
     user_data = request.decoded_token
@@ -64,14 +74,86 @@ def answerchat():
     return jsonify({'result': f'Welcome {user_data["email"]}!'})
 
 
+
+
+
+@app.route('/api/projects', methods=['POST'])
+def add_project():
+    user_data = request.decoded_token
+    log.info("user %s", user_data)
+    data = request.json
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+
+    data['uploaded_by'] = user_data.get('email')
+    current_time = datetime.datetime.now()
+    data['date_created'] = current_time
+    data['date_updated'] = current_time
+
+    # Ensure members and categories are JSON arrays
+    if 'members' in data and isinstance(data['members'], list):
+        data['members'] = json.dumps(data['members'])
+    if 'categories' in data and isinstance(data['categories'], list):
+        data['categories'] = json.dumps(data['categories'])
+
+    try:
+        insert_project_into_db(data)
+        return jsonify({"message": "Project added successfully"}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/projects/uploaddocument', methods=['POST'])
+def uploaddocument():
+    user_data = request.decoded_token
+    log.info("user %s", user_data)
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400  # Bad Request
+
+    file = request.files['file']
+
+    # If the user does not select a file, the browser submits an
+    # empty file without a filename.
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400  # Bad Request
+
+    if file:
+
+        filename = secure_filename(file.filename)
+        temp_dir = tempfile.mkdtemp()
+        temp_path = os.path.join(temp_dir, filename)
+        file.save(temp_path)
+
+        # Upload the file to S3
+
+        try:
+            log.info("Uploading filename: %s", filename)
+
+            userid = user_data["userId"]
+
+            # Todo , use this once its in production
+            random_uuid = uuid.uuid4().hex
+            # filename = f"{userid}-{random_uuid}-{filename}"
+            filename = f"{userid}-{filename}"
+            url = uploadFile(temp_path, filename)
+            content = identify_insights_from_filename(temp_path)
+            return jsonify({"url": url, "content": content,
+                            'result': f'File uploaded successfully to S3. Welcome {user_data["email"]}!'})
+        except Exception as e:
+            log.error("An error occurred: %s", e)
+            return jsonify({'error': str(e)}), 500  # Internal Server Error
+
+        finally:
+            # Clean up the temporary file
+            os.remove(temp_path)
+            os.rmdir(temp_dir)
+
+    return jsonify({'error': 'An unexpected error occurred'}), 500  # Internal Server Error
+
+
 def start_server():
-    CORS(app,   resources={r"/api/*": {"origins": "*"}}, allow_headers=["Authorization", "Content-Type"])
+    CORS(app, resources={r"/api/*": {"origins": "*"}}, allow_headers=["Authorization", "Content-Type"])
     app.run(use_reloader=True, debug=True, port=5000, threaded=True)
-
-
-
-
-
 
 #
 # @app.route('/api/answer', methods=['POST'])  # Changed to POST
