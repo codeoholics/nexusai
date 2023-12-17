@@ -1,7 +1,7 @@
 from unittest import TestCase
 
 import app_loader
-from projects.project_init_service import seed_projects_data
+from projects.project_seeder import seed_projects_data
 
 
 class Test(TestCase):

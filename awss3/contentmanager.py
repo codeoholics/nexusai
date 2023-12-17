@@ -1,4 +1,5 @@
 from awss3.awsconfig import getBotoS3Client
+from projects.document_reader import log
 from shared import config, logger
 
 log = logger.get_logger(__name__)
@@ -66,3 +67,5 @@ def downloadfile(object_name):
     except Exception as e:
         log.error("Download failed: %s", e)
         return None
+
+

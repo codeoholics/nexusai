@@ -1,9 +1,9 @@
 from unittest import TestCase
 
 from projects import sourcecode_service
-from projects.document_reader import extract_text_from_file, identify_insights_from_filename, download_public_s3_file
+from projects.document_reader import extract_text_from_file, identify_insights_from_filename, extract_file_content_from_s3_url
 import app_loader
-from projects.project_init_service import seed_projects_data
+from projects.project_seeder import seed_projects_data
 
 
 class Test(TestCase):

@@ -23,6 +23,8 @@ striprtf = "*"
 gitpython = "*"
 scikit-learn = "*"
 openai = "*"
+transformers = "*"
+torch = "*"
 
 [dev-packages]
 

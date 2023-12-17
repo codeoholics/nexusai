@@ -1,15 +1,16 @@
 import os
+import tempfile
+
+import requests
 from docx import Document
 import fitz  # PyMuPDF
 import json
-import requests
-import tempfile
 
 from striprtf.striprtf import rtf_to_text
 
-from io import BytesIO
-
 from aiclients import openrouter_client
+
+
 from shared import logger
 
 log = logger.get_logger(__name__)
@@ -51,17 +52,15 @@ def format_insights(json_string):
     try:
         # Try to parse the JSON string
         parsed_json = json.loads(json_string)
+        if 'categories' in parsed_json and parsed_json['categories'].strip():
+            parsed_json['categories'] = [category.strip() for category in parsed_json['categories'].split(',')]
+        else:
+            parsed_json['categories'] = []
+
+        return parsed_json
     except json.JSONDecodeError:
-        # If parsing fails, create an empty JSON object
-        parsed_json = {
-            "title": "",
-            "description": "",
-            "institute": "",
-            "categories": "",
-            "theme": "",
-            "domain": ""
-        }
-    return parsed_json
+        log.error("Error occurred during JSON parsing: %s", json_string)
+        raise ValueError("Error occurred during JSON parsing: %s", json_string)
 
 
 def identify_insights_from_filename(filename):
@@ -74,7 +73,7 @@ def identify_insights_from_filename(filename):
             "title": "",
             "description": "",
             "institute": "",
-            "categories": "",
+            "categories": [],
             "theme": "",
             "domain": ""
         }
@@ -103,20 +102,39 @@ def identify_insights_from_text(summary):
             "domain": ""
         }
 
-def download_public_s3_file(url):
+def extract_file_content_from_s3_url(url):
     try:
         # Download the file
         response = requests.get(url)
         response.raise_for_status()
-        summary = None
 
-        # Write the content to a temporary file
-        with tempfile.NamedTemporaryFile(delete=True) as temp_file:
+        # Check if the response is empty
+        if not response.content:
+            log.error("The response content is empty.")
+            return None
+
+        # Log the response status and content length
+        log.info(f"Response Status: {response.status_code}, Content Length: {len(response.content)}")
+
+        # Extract filename from URL
+        filename = url.split('/')[-1]
+        temp_dir = tempfile.gettempdir()
+        temp_file_path = os.path.join(temp_dir, filename)
+
+        # Write the content to a temporary file with the same name
+        with open(temp_file_path, 'wb') as temp_file:
             temp_file.write(response.content)
-            temp_file.flush()
-            filename = temp_file.name  # Get the name of the temporary file
-            summary = extract_text_from_file(filename)
-            return summary
+
+        log.info(f"Downloaded the file to {temp_file_path}")
+
+        # Extract text from the file
+        summary = extract_text_from_file(temp_file_path)
+        log.info(f"Extracted the following text from the file: {len(summary)}")
+
+        # Clean up: Delete the temporary file after use
+        os.remove(temp_file_path)
+
+        return summary
 
     except requests.RequestException as e:
         log.error(f"Failed to download the file: {e}")

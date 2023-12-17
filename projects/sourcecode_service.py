@@ -5,6 +5,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 import tempfile
 
 from aiclients import openai_client
+from db.vector_utils import string_to_vector
 
 from shared import logger
 
@@ -40,7 +41,7 @@ def clone_and_vectorize(repo_url, extensions=['.js', '.py', '.java', '.ts', '.go
         log.info("Vectorizing source code")
         log.info(source_code)
 
-        vectorized_source_code = openai_client.create_openai_embedding(source_code)
+        vectorized_source_code = string_to_vector(source_code)
         return vectorized_source_code
 
 

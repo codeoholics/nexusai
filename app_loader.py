@@ -6,7 +6,7 @@ from db import db_client
 
 
 
-from projects.project_init_service import seed_projects
+from projects.project_seeder import seed_projects
 from projects.project_repository import initialize_projects_table, clean_project_data
 
 from aiclients import openai_client
@@ -18,7 +18,7 @@ def setup_database():
     db_client.initdb()
     #TOOD: Remove this  after everything is set
     log.info("Dropping projects table")
-    clean_project_data()
+    # clean_project_data()
     log.info("init projects table")
     initialize_projects_table()
     log.info("init projects table completed")

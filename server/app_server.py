@@ -11,6 +11,7 @@ import datetime
 import json
 
 from awss3.contentmanager import uploadFile
+from projects import project_repository, project_api
 from projects.document_reader import extract_text_from_file, identify_insights_from_filename
 from projects.project_repository import insert_project_into_db
 from shared import config
@@ -20,7 +21,7 @@ from shared import logger
 log = logger.get_logger(__name__)
 
 app = Flask(__name__, static_folder='static')
-
+app.register_blueprint(project_api.project_api, url_prefix='/api/projects')
 
 
 @app.route('/', defaults={'path': ''})
@@ -60,6 +61,7 @@ def check_token():
             # to make it available to the view functions if needed
             request.decoded_token = decoded_token
         except jwt.ExpiredSignatureError:
+
             abort(401, description='Token has expired')
         except jwt.InvalidTokenError:
             abort(401, description='Invalid token')
@@ -98,9 +100,78 @@ def add_project():
 
     try:
         insert_project_into_db(data)
+
         return jsonify({"message": "Project added successfully"}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route('/api/projects', methods=['GET'])
+def get_all_projects():
+    try:
+        projects = project_repository.find_all_projects()
+        return jsonify(projects), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/projects/uploaded_by/<uploaded_by>', methods=['GET'])
+def get_projects_by_uploaded_by(uploaded_by):
+    try:
+        projects = project_repository.find_projects_by_uploaded_by(uploaded_by)
+        return jsonify(projects), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/projects/categories', methods=['GET'])
+def get_projects_by_categories():
+    categories = request.args.get('categories')  # Expected as a comma-separated string
+    if categories:
+        categories_list = categories.split(',')
+    else:
+        return jsonify({"error": "No categories provided"}), 400
+
+    try:
+        projects = project_repository.find_projects_by_categories(categories_list)
+        return jsonify(projects), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/projects/domain/<domain>', methods=['GET'])
+def get_projects_by_domain(domain):
+    try:
+        projects = project_repository.find_projects_by_domain(domain)
+        return jsonify(projects), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/projects/search', methods=['GET'])
+def search_projects():
+    # Extract search filters from query parameters
+    filters = {
+        'title': request.args.get('title'),
+        'project_type': request.args.get('project_type'),
+        'theme': request.args.get('theme'),
+        'categories': request.args.get('categories'),  # JSON array as a string
+        # Add other filters as needed
+    }
+
+    # Sorting parameters
+    sort_by = request.args.get('sort_by', 'title')
+    sort_type = request.args.get('sort_type', 'asc')
+
+    # Pagination parameters
+    try:
+        page = int(request.args.get('page', 1))
+        per_page = int(request.args.get('per_page', 10))
+    except ValueError:
+        return jsonify({"error": "Invalid pagination parameters"}), 400
+
+    try:
+        search_results = project_repository.search_projects_with_pagination(filters, page, per_page, sort_by, sort_type)
+        return jsonify(search_results), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 
 
 @app.route('/api/projects/uploaddocument', methods=['POST'])
@@ -149,6 +220,9 @@ def uploaddocument():
             os.rmdir(temp_dir)
 
     return jsonify({'error': 'An unexpected error occurred'}), 500  # Internal Server Error
+
+
+
 
 
 def start_server():

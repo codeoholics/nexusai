@@ -23,10 +23,19 @@ def initdb():
 
     conn = psycopg2.connect(**DATABASE)
     conn.cursor().execute('CREATE EXTENSION IF NOT EXISTS vector')
+    conn.cursor().execute('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"')
     register_vector(conn)
     log.info("Connected to database...")
 
+def get_vector_db():
+    COLLECTION_NAME = "state_of_the_union_test"
 
+    db = PGVector.from_documents(
+        embedding=embeddings,
+        documents=docs,
+        collection_name=COLLECTION_NAME,
+        connection_string=CONNECTION_STRING,
+    )
 
 def get_conn():
     return conn

@@ -6,7 +6,7 @@ import os
 from aiclients import openai_client
 from awss3.contentmanager import uploadFile
 from db import db_client
-from projects import project_repository, sourcecode_service
+from projects import project_repository, sourcecode_service, project_service
 
 from projects.document_reader import identify_insights_from_filename, identify_insights_from_text, \
     extract_text_from_file
@@ -52,10 +52,10 @@ def seed_projects_data():
             summary_contents = extract_text_from_file(full_path)
             obj = identify_insights_from_text(summary_contents)
             # categories  , split by comma , if empty set empty list
-            if obj['categories'] == "":
-                obj['categories'] = []
-            else:
-                obj['categories'] = obj['categories'].split(",")
+            # if obj['categories'] == "":
+            #     obj['categories'] = []
+            # else:
+            #     obj['categories'] = obj['categories'].split(",")
 
             obj['categories'] = json.dumps(obj['categories'])
             obj['uploaded_by'] = email
@@ -72,30 +72,8 @@ def seed_projects_data():
             url = uploadFile(full_path, filename)
             obj['summary_file'] = url
             log.info(f"Inserting to db")
-
-            # now get summary conetnt
-            current_response = insert_project_into_db(obj)
-            log.info(obj)
-
-
-            #now get the summary , create embedding and put it into vector
-
-            # summary_contents
-            log.info(current_response)
-            #create embedding from summary
-            project_id = current_response["id"]
-            summary_embeddings = openai_client.create_openai_embedding(summary_contents)
-            summary_response = project_repository.insert_embeddings_to_project(project_id, "summary", summary_embeddings)
-            sourcecode_response = None
-
-
-            if current_response["prototype_sourcecode"]:
-                log.info("Validating source code")
-                sourcecode_embeddings = sourcecode_service.clone_and_vectorize(current_response["prototype_sourcecode"])
-                sourcecode_response = project_repository.insert_embeddings_to_project(project_id, "sourcecode",sourcecode_embeddings)
-
-            responses.append({"project": current_response, "summary": summary_response, "sourcecode": sourcecode_response})
-            # break
+            result = project_service.insert_project(obj)
+            responses.append(result)
 
     log.info(f"Responses: {responses}")
     return responses
@@ -114,6 +92,7 @@ def seed_projects():
     log.info("seed_projects init")
     if db_client.table_has_records("projects"):
         return
+    seed_projects_data()
 
 
 

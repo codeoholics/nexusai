@@ -1,8 +1,8 @@
 import os
 from unittest import TestCase
 
-from projects.document_reader import extract_text_from_file, identify_insights_from_filename, download_public_s3_file
-from projects.project_init_service import get_resource_folder_path
+from projects.document_reader import extract_text_from_file, identify_insights_from_filename, extract_file_content_from_s3_url
+from projects.project_seeder import get_resource_folder_path
 from shared import logger
 log = logger.get_logger(__name__)
 import app_loader
@@ -43,9 +43,10 @@ class Test(TestCase):
 
     def test_extract_text_from_file_should__return_properly(self):
         response = extract_text_from_file("../resources/summary1.docx")
+        log.info(response)
 
         self.assertTrue("The rapid advancement in Internet of Things" in response)
 
     def test_download_public_s3_file_should_work_properly(self):
-        response = download_public_s3_file("../resources/summary1.docx")
+        response = extract_file_content_from_s3_url("../resources/summary1.docx")
         self.assertTrue("The rapid advancement in Internet of Things" in response)
