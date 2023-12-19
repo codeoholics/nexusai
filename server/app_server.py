@@ -79,31 +79,7 @@ def answerchat():
 
 
 
-@app.route('/api/projects', methods=['POST'])
-def add_project():
-    user_data = request.decoded_token
-    log.info("user %s", user_data)
-    data = request.json
-    if not data:
-        return jsonify({"error": "No data provided"}), 400
 
-    data['uploaded_by'] = user_data.get('email')
-    current_time = datetime.datetime.now()
-    data['date_created'] = current_time
-    data['date_updated'] = current_time
-
-    # Ensure members and categories are JSON arrays
-    if 'members' in data and isinstance(data['members'], list):
-        data['members'] = json.dumps(data['members'])
-    if 'categories' in data and isinstance(data['categories'], list):
-        data['categories'] = json.dumps(data['categories'])
-
-    try:
-        insert_project_into_db(data)
-
-        return jsonify({"message": "Project added successfully"}), 201
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
 
 @app.route('/api/projects', methods=['GET'])
 def get_all_projects():

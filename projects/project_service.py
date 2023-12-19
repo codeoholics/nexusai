@@ -25,7 +25,7 @@ def insert_project(obj):
     project_id = current_response["id"]
     summary_embeddings = string_to_vector(summary_contents)
     summary_plagarismscore = None
-    # summary_plagarismscore = project_repository.find_similar_and_check_plagiarism("summary", summary_embeddings)
+    summary_plagarismscore = project_repository.find_similar_and_check_plagiarism("summary", summary_embeddings)
     summary_response = project_repository.insert_embeddings_to_project(project_id, "summary", summary_embeddings)
     sourcecode_response = None
     sourcecode_plagarismscore = None
@@ -35,7 +35,15 @@ def insert_project(obj):
         sourcecode_embeddings = sourcecode_service.clone_and_vectorize(current_response["prototype_sourcecode"])
         sourcecode_response = project_repository.insert_embeddings_to_project(project_id, "sourcecode",
                                                                               sourcecode_embeddings)
-        # sourcecode_plagarismscore = project_repository.find_similar_and_check_plagiarism("summary", summary_embeddings)
+        sourcecode_plagarismscore = project_repository.find_similar_and_check_plagiarism("sourcecode", summary_embeddings)
+    plagiarism_details = []
+    if summary_plagarismscore is not None:
+        plagiarism_details.extend(summary_plagarismscore)
+    if sourcecode_plagarismscore is not None:
+        plagiarism_details.extend(sourcecode_plagarismscore)
+
+    if plagiarism_details:
+        project_repository.update_project_plagiarism_details(project_id, plagiarism_details)
 
     return {"project": current_response, "summary": summary_response, "summary_plagarismscore": summary_plagarismscore,
             "sourcecode": sourcecode_response, "sourcecode_plagarismscore": sourcecode_plagarismscore}

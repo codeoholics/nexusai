@@ -27,8 +27,8 @@ Authorization: Bearer {{student_token}}
         "alice.smith@example.com"
     ],
     "institute": "Green Tech University",
-    "prototype_demo": "https://s3.amazonaws.com/yourbucket/demos/demo1.mp4",
-    "prototype_sourcecode": "https://github.com/exampleuser/renewable-energy-project",
+    "prototype_demo": "",
+    "prototype_sourcecode": "",
     "categories": ["Renewable Energy", "Sustainability", "Technology"],
     "theme": "Engineering",
     "domain": "Renewable Energy"

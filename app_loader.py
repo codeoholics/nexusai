@@ -17,8 +17,8 @@ log = logger.get_logger(__name__)
 def setup_database():
     db_client.initdb()
     #TOOD: Remove this  after everything is set
-    log.info("Dropping projects table")
-    # clean_project_data()
+    #log.info("Dropping projects table")
+    #clean_project_data()
     log.info("init projects table")
     initialize_projects_table()
     log.info("init projects table completed")

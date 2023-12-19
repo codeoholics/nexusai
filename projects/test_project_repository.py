@@ -19,7 +19,7 @@ class Test(TestCase):
     @classmethod
     def setUpClass(cls):
         print("setUpClass")
-        #app_loader.init_app()
+        app_loader.init_app()
 
     def test_calculate_similarity(self):
         testcases = [[0, 100] ,[0.5,75],[1, 50] ,[1.5, 25],[2, 0]]
