@@ -1,5 +1,6 @@
 import os
 import tempfile
+import traceback
 
 import requests
 from docx import Document
@@ -86,12 +87,14 @@ def identify_insights_from_text(summary):
         if len(summary) > 500:
             summary = summary[:500]
 
-        prompt = f"""Here is a project summary: {summary}. Please extract the following information in JSON format: title, description, institute, categories (topics separated by commas), theme (such as science or arts or engineering,it), and domain (like disaster management)."""
+        prompt = f"""Here is a project summary: {summary}. Please extract the following information in JSON format: title, description,summary,domain(hardware or software), institute, categories (topics separated by commas), theme (such as science or arts or engineering,it), and domain (like disaster management)."""
         log.info(prompt)
         message_content = openrouter_client.fetch_first_from_ai(prompt)
+        log.info(message_content)
 
         return format_insights(message_content)
     except Exception as e:
+        traceback.print_exc()
         log.error("Error occurred during text extraction: %s", e)
         return {
             "title": "",

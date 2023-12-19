@@ -1,6 +1,8 @@
 import csv
 import ast
 import json
+import psycopg2.extras
+
 import traceback
 
 from db import db_client
@@ -160,7 +162,13 @@ def find_similar_and_check_plagiarism(embedding_type, embedding):
                         row_dict['similarity'] = percentile
                         row_dict['embeddingtype'] = embedding_type
                         results.append(row_dict)
-                    return get_unique_projects_with_similarity(results)
+                        unique_results = get_unique_projects_with_similarity(results)
+                        # append embedding_type to each dict
+                        for item in unique_results:
+                            item['embeddingtype'] = embedding_type
+
+
+                    return unique_results
                 else:
                     return []
 
@@ -202,11 +210,13 @@ def update_project_plagiarism_details(project_id, plagiarism_details):
         log.info(update_params)
 
         cursor.execute(update_query, update_params)
+        log.info("execute completed")
         updated_row = cursor.fetchone()
         db_client.get_conn().commit()
         cursor.close()
         column_names = [desc[0] for desc in cursor.description]
         updated_data = dict(zip(column_names, updated_row))
+        log.info("updated_data fetched")
 
         return updated_data
     except Exception as e:
@@ -235,8 +245,8 @@ def initialize_projects_table():
                     prototype_demo TEXT,
                     prototype_sourcecode TEXT,
                     categories JSONB,
-                    theme VARCHAR(20),
-                    domain VARCHAR(50),
+                    theme VARCHAR(120),
+                    domain VARCHAR(150),
                     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     date_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     rating       INTEGER,
@@ -293,6 +303,71 @@ def find_all_projects():
             return []
     except Exception as e:
         raise Exception(f"Error fetching all projects: {e}")
+
+
+def get_project_details_by_ids(project_dicts):
+    try:
+        log.info("get_project_details_by_ids")
+        project_ids = [project_dict["project_id"] for project_dict in project_dicts]
+
+        # Open a new connection
+        conn = db_client.get_conn()
+        # Create a cursor as a DictCursor
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+        # Adjust the query to cast text to UUID
+        query = "SELECT * FROM projects WHERE id = ANY(%s::uuid[])"
+
+        # Execute the query with a list of IDs
+        cursor.execute(query, (project_ids,))
+        rows = cursor.fetchall()
+        cursor.close()
+
+        # Create a mapping from project ID to project details
+        project_details = {str(row['id']): dict(row) for row in rows}
+
+        # Update the original dicts with the project details
+        for project_dict in project_dicts:
+            project_id = project_dict["project_id"]
+            details = project_details.get(project_id)
+            if details:
+                project_dict.update(details)
+
+        return project_dicts
+    except Exception as e:
+        traceback.print_exc()
+        log.error(f"Error fetching project details by IDs: {e}")
+        return []
+
+# def get_project_details_by_ids(project_dicts):
+#     try:
+#         log.info("get_project_details_by_ids")
+#         project_ids = [project_dict["project_id"] for project_dict in project_dicts]
+#
+#         # Join the project IDs into a string for the SQL query
+#         formatted_ids = ','.join(["%s"] * len(project_ids))
+#
+#         cursor = db_client.get_conn().cursor()
+#         query = f"SELECT * FROM projects WHERE id IN ({formatted_ids})"
+#
+#         cursor.execute(query, project_ids)
+#         rows = cursor.fetchall()
+#         cursor.close()
+#
+#         # Convert the result into a dictionary where key is the project_id
+#         project_details = {row['id']: row for row in rows}
+#
+#         # Loop through the input dictionaries and update them with details
+#         for project_dict in project_dicts:
+#             project_id = project_dict["id"]
+#             details = project_details.get(project_id)
+#             if details:
+#                 project_dict.update(details)
+#
+#         return project_dicts
+#     except Exception as e:
+#         log.error(f"Error fetching project details by IDs: {e}")
+#         return []
 
 
 def find_projects_by_uploaded_by(uploaded_by):

@@ -1,3 +1,5 @@
+import json
+
 from aiclients import openai_client
 from db.vector_utils import string_to_vector
 from projects import project_repository, sourcecode_service
@@ -35,15 +37,30 @@ def insert_project(obj):
         sourcecode_embeddings = sourcecode_service.clone_and_vectorize(current_response["prototype_sourcecode"])
         sourcecode_response = project_repository.insert_embeddings_to_project(project_id, "sourcecode",
                                                                               sourcecode_embeddings)
-        sourcecode_plagarismscore = project_repository.find_similar_and_check_plagiarism("sourcecode", summary_embeddings)
+        sourcecode_plagarismscore = project_repository.find_similar_and_check_plagiarism("sourcecode",
+                                                                                         sourcecode_embeddings)
+        log.info("Validating source code")
+        log.info(sourcecode_plagarismscore)
+
     plagiarism_details = []
     if summary_plagarismscore is not None:
+        log.info("summary_plagarismscore plagiarism details")
+        log.info(summary_plagarismscore)
         plagiarism_details.extend(summary_plagarismscore)
     if sourcecode_plagarismscore is not None:
+        log.info("sourcecode_plagarismscore not none")
         plagiarism_details.extend(sourcecode_plagarismscore)
 
+    all_plagarism_reponses = []
+
     if plagiarism_details:
-        project_repository.update_project_plagiarism_details(project_id, plagiarism_details)
+        log.info("Updating plagiarism details")
+        current_response = project_repository.update_project_plagiarism_details(project_id, plagiarism_details)
+        log.info("update_project_plagiarism_details fetched")
+        log.info(current_response)
+        log.info("all_plagarism_reponses started")
+        all_plagarism_reponses = project_repository.get_project_details_by_ids(current_response["plagiarism_details"])
 
     return {"project": current_response, "summary": summary_response, "summary_plagarismscore": summary_plagarismscore,
-            "sourcecode": sourcecode_response, "sourcecode_plagarismscore": sourcecode_plagarismscore}
+            "sourcecode": sourcecode_response, "sourcecode_plagarismscore": sourcecode_plagarismscore,
+            "all_plagarism_reponses": all_plagarism_reponses}

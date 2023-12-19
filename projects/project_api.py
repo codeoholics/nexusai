@@ -1,5 +1,6 @@
 import datetime
 import json
+import traceback
 
 from flask import Blueprint, jsonify, request
 
@@ -59,4 +60,5 @@ def add_project():
 
         return jsonify({"message": "Project added successfully", "result": result}), 201
     except Exception as e:
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500

@@ -43,6 +43,7 @@ def seed_projects_data():
     csv_file_path = os.path.join(resources_dir, 'mockprojects.csv')
     with open(csv_file_path, mode='r', encoding='utf-8-sig') as csv_file:
         csv_reader = csv.DictReader(csv_file)
+        i=1
         for row in csv_reader:
             log.info(row)
             email = row['name'].lower() + "@student.com"
@@ -64,6 +65,8 @@ def seed_projects_data():
             if row['githuburl'] != "":
                 obj['prototype_sourcecode'] = row['githuburl']
 
+            if obj['title']  == None or obj['title'] == "":
+                obj['title'] = "Project Title " + str(i)
 
 
             obj['institute'] = 'panimalar institute of technology'
@@ -73,6 +76,7 @@ def seed_projects_data():
             obj['summary_file'] = url
             log.info(f"Inserting to db")
             result = project_service.insert_project(obj)
+            i = i + 1
             responses.append(result)
 
     log.info(f"Responses: {responses}")

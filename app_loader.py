@@ -36,3 +36,22 @@ def init_app():
     log.info("Completed Db setup")
     openai_client.init_openai()
     log.info("App initialized successfully!")
+
+
+def recreate_database():
+    load_dotenv()
+    log.info("Loaded environment variables from .env file")
+    log.info(f"DB_HOST: {config.get('PG_HOST')}")
+    db_client.initdb()
+    # TOOD: Remove this  after everything is set
+    log.info("Dropping projects table")
+    clean_project_data()
+    log.info("init projects table")
+    initialize_projects_table()
+    log.info("init projects table completed")
+    seed_projects()
+    log.info("seed projects table completed")
+    log.info("Completed Db setup")
+    openai_client.init_openai()
+    log.info("App initialized successfully!")
+
