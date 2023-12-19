@@ -19,13 +19,13 @@ class Test(TestCase):
     @classmethod
     def setUpClass(cls):
         print("setUpClass")
-        app_loader.init_app()
+        #app_loader.init_app()
 
     def test_calculate_similarity(self):
         testcases = [[0, 100] ,[0.5,75],[1, 50] ,[1.5, 25],[2, 0]]
 
         for testcase in testcases:
-            res = calculate_similarity_percentile(testcase[0])
+            res = calculate_similarity_percentile(testcase[0],2)
             log.info(f"testcase {testcase[0]} res {res}")
             self.assertTrue(res == testcase[1])
 

@@ -152,7 +152,7 @@ def find_similar_and_check_plagiarism(embedding_type, embedding):
         with db_client.get_conn() as conn:
             with conn.cursor() as cursor:
 
-                max_acceptable_distance = 8.9
+                max_acceptable_distance = 2.1
 
                 # [('23', 4.109220668665067)]
                 # [('23', 0.0)]
@@ -182,7 +182,7 @@ def find_similar_and_check_plagiarism(embedding_type, embedding):
                         row_dict = dict(zip(column_names, row))
                         similarity_score = row_dict['similarity']
 
-                        percentile = calculate_similarity_percentile(similarity_score)
+                        percentile = calculate_similarity_percentile(similarity_score, max_acceptable_distance)
 
                         row_dict['similarity'] = percentile
                         results.append(row_dict)
@@ -196,15 +196,15 @@ def find_similar_and_check_plagiarism(embedding_type, embedding):
         raise e
 
 
-def calculate_similarity_percentile(similarity_score):
+def calculate_similarity_percentile(similarity_score,max_acceptable_distance):
     # Calculate percentile (inverse mapping of similarity score)
     if similarity_score == 0:
         percentile = 100
-    elif similarity_score >= 2:
+    elif similarity_score >= max_acceptable_distance:
         percentile = 0
     else:
         # Adjust this mapping as per your requirement
-        percentile = 100 - (similarity_score / 2 * 100)
+        percentile = 100 - (similarity_score / max_acceptable_distance * 100)
     return percentile
 
 
