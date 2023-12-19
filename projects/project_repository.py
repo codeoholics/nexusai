@@ -339,37 +339,6 @@ def get_project_details_by_ids(project_dicts):
         log.error(f"Error fetching project details by IDs: {e}")
         return []
 
-# def get_project_details_by_ids(project_dicts):
-#     try:
-#         log.info("get_project_details_by_ids")
-#         project_ids = [project_dict["project_id"] for project_dict in project_dicts]
-#
-#         # Join the project IDs into a string for the SQL query
-#         formatted_ids = ','.join(["%s"] * len(project_ids))
-#
-#         cursor = db_client.get_conn().cursor()
-#         query = f"SELECT * FROM projects WHERE id IN ({formatted_ids})"
-#
-#         cursor.execute(query, project_ids)
-#         rows = cursor.fetchall()
-#         cursor.close()
-#
-#         # Convert the result into a dictionary where key is the project_id
-#         project_details = {row['id']: row for row in rows}
-#
-#         # Loop through the input dictionaries and update them with details
-#         for project_dict in project_dicts:
-#             project_id = project_dict["id"]
-#             details = project_details.get(project_id)
-#             if details:
-#                 project_dict.update(details)
-#
-#         return project_dicts
-#     except Exception as e:
-#         log.error(f"Error fetching project details by IDs: {e}")
-#         return []
-
-
 def find_projects_by_uploaded_by(uploaded_by):
     try:
         cursor = db_client.get_conn().cursor()

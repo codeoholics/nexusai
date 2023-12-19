@@ -1,4 +1,5 @@
 import os
+import traceback
 
 from flask import Flask, render_template, send_from_directory, request, jsonify, abort
 from werkzeug.utils import secure_filename
@@ -11,7 +12,7 @@ import datetime
 import json
 
 from awss3.contentmanager import uploadFile
-from projects import project_repository, project_api
+from projects import project_repository, project_api, chat
 from projects.document_reader import extract_text_from_file, identify_insights_from_filename
 from projects.project_repository import insert_project_into_db
 from shared import config
@@ -68,12 +69,17 @@ def check_token():
     else:
         abort(401, description='Missing token')
 
+def getChatResponse(email,projectId,message):
+    # return message
+    # return "I don't know what to say to that" + message + " " + email + " " + projectId
+    return chat.get_answer(email,projectId,message)
 
 @app.route('/api/answer', methods=['GET'])
 def answerchat():
     user_data = request.decoded_token
     print("user_data:", user_data)
-    return jsonify({'result': f'Welcome {user_data["email"]}!'})
+    return jsonify({'result': getChatResponse(user_data["email"],request.args.get('projectid'),request.args.get('question'))})
+    # return jsonify({'result': f'Welcome {user_data["email"]}!'})
 
 
 
@@ -87,6 +93,7 @@ def get_all_projects():
         projects = project_repository.find_all_projects()
         return jsonify(projects), 200
     except Exception as e:
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/projects/uploaded_by/<uploaded_by>', methods=['GET'])
