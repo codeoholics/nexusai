@@ -81,7 +81,7 @@ def answerchat():
 
 
 
-@app.route('/api/projects', methods=['GET'])
+@app.route('/api/allprojects', methods=['GET'])
 def get_all_projects():
     try:
         projects = project_repository.find_all_projects()

@@ -23,9 +23,7 @@ Authorization: Bearer {{student_token}}
     "title": "Innovative Approaches in Renewable Energy",
     "description": "This project explores novel techniques in harnessing renewable energy sources. It aims to address the efficiency and scalability issues in solar and wind energy conversion.",
     "summary_file": "https://nexusbucketpanimalar.s3.amazonaws.com/148-summary.docx",
-    "members": [
-        "alice.smith@example.com"
-    ],
+    "members": [        "alice.smith@example.com"    ],
     "institute": "Green Tech University",
     "prototype_demo": "",
     "prototype_sourcecode": "",
@@ -33,6 +31,8 @@ Authorization: Bearer {{student_token}}
     "theme": "Engineering",
     "domain": "Renewable Energy"
 }
+
+
 
 
 ### Search Projects
