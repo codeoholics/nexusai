@@ -1,5 +1,6 @@
 import csv
 import os
+import threading
 import traceback
 
 from flask import Flask, render_template, send_from_directory, request, jsonify, abort
@@ -156,54 +157,59 @@ def search_projects():
         return jsonify({"error": str(e)}), 500
 
 
+# import csv
+# import threading
+# from flask import Flask, request, jsonify
+#
+# app = Flask(__name__)
 
 
-@app.route('/api/projects/uploaddocument', methods=['POST'])
-def uploaddocument():
+def process_data(data,user_data):
+    log.info("Processing data...")
+    log.info("Data: %s", data)
+    log.info("User data: %s", user_data)
+    # Implement the logic to process your data
+    pass
+
+
+@app.route('/api/projects/uploadmultipleprojecttemplate', methods=['POST'])
+def uploadmultipleprojecttemplate():
     user_data = request.decoded_token
-    log.info("user %s", user_data)
     if 'file' not in request.files:
         return jsonify({'error': 'No file part'}), 400  # Bad Request
 
     file = request.files['file']
 
-    # If the user does not select a file, the browser submits an
-    # empty file without a filename.
     if file.filename == '':
         return jsonify({'error': 'No selected file'}), 400  # Bad Request
 
     if file:
-
-        filename = secure_filename(file.filename)
         temp_dir = tempfile.mkdtemp()
-        temp_path = os.path.join(temp_dir, filename)
+        temp_path = os.path.join(temp_dir, secure_filename(file.filename))
         file.save(temp_path)
 
-        # Upload the file to S3
-
         try:
-            log.info("Uploading filename: %s", filename)
+            with open(temp_path, newline='') as csvfile:
+                reader = csv.DictReader(csvfile)
+                required_fields = {'fileurl', 'title', 'member', 'domain', 'categories', 'sourcecode_url', 'demo_url'}
 
-            userid = user_data["userId"]
+                if not required_fields.issubset(reader.fieldnames):
+                    return jsonify({'error': 'CSV does not have the required fields'}), 400  # Bad Request
 
-            # Todo , use this once its in production
-            random_uuid = uuid.uuid4().hex
-            # filename = f"{userid}-{random_uuid}-{filename}"
-            filename = f"{userid}-{filename}"
-            url = uploadFile(temp_path, filename)
-            content = identify_insights_from_filename(temp_path)
-            return jsonify({"url": url, "content": content,
-                            'result': f'File uploaded successfully to S3. Welcome {user_data["email"]}!'})
+                data = [row for row in reader]
+                threading.Thread(target=process_data, args=(data,user_data,)).start()
+
+                return jsonify({'message': 'File uploaded and processing started'}), 200
         except Exception as e:
-            log.error("An error occurred: %s", e)
             return jsonify({'error': str(e)}), 500  # Internal Server Error
-
         finally:
-            # Clean up the temporary file
             os.remove(temp_path)
             os.rmdir(temp_dir)
 
     return jsonify({'error': 'An unexpected error occurred'}), 500  # Internal Server Error
+
+
+
 
 
 
@@ -265,11 +271,11 @@ def createtemplate():
                         os.remove(temp_path)
                         os.rmdir(temp_dir)
             with tempfile.NamedTemporaryFile(mode='w+', delete=False) as temp_csv:
-                fieldnames = ['fileurl', 'title', 'member', 'domain', 'categories']
+                fieldnames = ['fileurl', 'title', 'member', 'domain', 'categories','sourcecode_url','demo_url']
                 writer = csv.DictWriter(temp_csv, fieldnames=fieldnames)
                 writer.writeheader()
                 for url in file_urls:
-                    writer.writerow({'fileurl': url, 'title': '', 'member': '', 'domain': '', 'categories': ''})
+                    writer.writerow({'fileurl': url, 'title': '', 'member': '', 'domain': '', 'categories': '', 'sourcecode_url': '','demo_url': ''})
 
                 temp_csv.flush()
                 temp_csv.close()  # Close the file to ensure all data is written
@@ -294,6 +300,53 @@ def createtemplate():
 
 
 
+
+@app.route('/api/projects/uploaddocument', methods=['POST'])
+def uploaddocument():
+    user_data = request.decoded_token
+    log.info("user %s", user_data)
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400  # Bad Request
+
+    file = request.files['file']
+
+    # If the user does not select a file, the browser submits an
+    # empty file without a filename.
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400  # Bad Request
+
+    if file:
+
+        filename = secure_filename(file.filename)
+        temp_dir = tempfile.mkdtemp()
+        temp_path = os.path.join(temp_dir, filename)
+        file.save(temp_path)
+
+        # Upload the file to S3
+
+        try:
+            log.info("Uploading filename: %s", filename)
+
+            userid = user_data["userId"]
+
+            # Todo , use this once its in production
+            random_uuid = uuid.uuid4().hex
+            # filename = f"{userid}-{random_uuid}-{filename}"
+            filename = f"{userid}-{filename}"
+            url = uploadFile(temp_path, filename)
+            content = identify_insights_from_filename(temp_path)
+            return jsonify({"url": url, "content": content,
+                            'result': f'File uploaded successfully to S3. Welcome {user_data["email"]}!'})
+        except Exception as e:
+            log.error("An error occurred: %s", e)
+            return jsonify({'error': str(e)}), 500  # Internal Server Error
+
+        finally:
+            # Clean up the temporary file
+            os.remove(temp_path)
+            os.rmdir(temp_dir)
+
+    return jsonify({'error': 'An unexpected error occurred'}), 500  # Internal Server Error
 
 
 
