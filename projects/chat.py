@@ -18,9 +18,9 @@ def json_serial(obj):
 def get_answer(username,project_id,query):
     try:
         log.info("get_answer init")
-        log.info(username)
-        log.info(query)
-        log.info(project_id)
+        # log.info(username)
+        # log.info(query)
+        # log.info(project_id)
 
         project_details = find_project_by_id(project_id)
         log.info(project_details)

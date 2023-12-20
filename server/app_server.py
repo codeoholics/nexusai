@@ -1,3 +1,4 @@
+import csv
 import os
 import traceback
 
@@ -203,6 +204,94 @@ def uploaddocument():
             os.rmdir(temp_dir)
 
     return jsonify({'error': 'An unexpected error occurred'}), 500  # Internal Server Error
+
+
+
+@app.route('/api/projects/createtemplate', methods=['POST'])
+def createtemplate():
+    user_data = request.decoded_token
+    log.info("user %s", user_data)
+    log.info("request %s", request)
+    log.info(request.files)
+
+    if 'files' not in request.files:
+        return jsonify({'error': 'No files part'}), 400
+
+    files = request.files.getlist('files')
+
+    # if 'files' not in request.files:
+    #     return jsonify({'error': 'No files part'}), 400  # Bad Request
+    #
+    # files = request.files.getlist('files')
+    file_urls = []
+
+    try:
+            # If the user does not select a file, the browser submits an
+            # empty file without a filename.
+            for file in files:
+                log.info("file %s", file)
+                if file.filename == '':
+                    return jsonify({'error': 'No selected file'}), 400  # Bad Request
+
+                if file:
+
+                    filename = secure_filename(file.filename)
+                    temp_dir = tempfile.mkdtemp()
+                    temp_path = os.path.join(temp_dir, filename)
+                    file.save(temp_path)
+
+                    # Upload the file to S3
+
+                    try:
+                        log.info("Uploading filename: %s", filename)
+
+                        userid = user_data["userId"]
+
+                        # Todo , use this once its in production
+                        random_uuid = uuid.uuid4().hex
+                        filename = f"{userid}-{random_uuid}-{filename}"
+                        #filename = f"{userid}-{filename}"
+                        url = uploadFile(temp_path, filename)
+                        file_urls.append(url)
+
+                    except Exception as e:
+                        traceback.print_exc()
+                        log.error("An error occurred: %s", e)
+
+
+                    finally:
+                        # Clean up the temporary file
+
+                        os.remove(temp_path)
+                        os.rmdir(temp_dir)
+            with tempfile.NamedTemporaryFile(mode='w+', delete=False) as temp_csv:
+                fieldnames = ['fileurl', 'title', 'member', 'domain', 'categories']
+                writer = csv.DictWriter(temp_csv, fieldnames=fieldnames)
+                writer.writeheader()
+                for url in file_urls:
+                    writer.writerow({'fileurl': url, 'title': '', 'member': '', 'domain': '', 'categories': ''})
+
+                temp_csv.flush()
+                temp_csv.close()  # Close the file to ensure all data is written
+
+                random_uuid = uuid.uuid4().hex
+                filename = f"template-{random_uuid}-projects.csv"
+                temp_file_path = temp_csv.name  # Get the path of the temporary file
+
+                try:
+                    url = uploadFile(temp_file_path, filename)  # Pass the file path instead of the file object
+                finally:
+                    os.unlink(temp_file_path)  # Delete the temporary file after uploading
+
+                return jsonify({"url": url,
+                                'result': f'Template created Successfully for files'})
+
+
+    except Exception as e:
+        traceback.print_exc()
+        log.error("An error occurred: %s", e)
+        return jsonify({'error': str(e)}), 500  # Internal Server Error
+
 
 
 
